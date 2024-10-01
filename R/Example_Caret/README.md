@@ -57,11 +57,12 @@ The project requires the following R packages:
 - `recipes`
 - `caret`
 - `AppliedPredictiveModeling`
+-  `dplyr`
 
 You can install these packages using the following command:
 
 ```R
-install.packages(c("tidyverse", "recipes", "caret", "AppliedPredictiveModeling"))
+install.packages(c("tidyverse", "recipes", "caret", "AppliedPredictiveModeling", "dplyr"))
 ```
 
 ## How to Run
