@@ -35,13 +35,12 @@ The dataset contains 569 observations and 32 attributes. The key attributes are:
 
 ## Model Performance
 
-The performance of the logistic regression model is evaluated using repeated 10-fold cross-validation to estimate its predictive ability. Key metrics used include:
-- **Accuracy**
-- **Precision**
-- **Recall**
-- **F1-Score**
+The logistic regression model was trained using repeated 10-fold cross-validation. Below are the key performance metrics:
 
-The results show that logistic regression provides a reliable model for classifying tumors, with further improvement possible by exploring more complex algorithms.
+- **Accuracy**: 95.07%
+- **Kappa**: 0.89
+
+These metrics suggest that the model performs well in distinguishing between benign and malignant tumors. The high accuracy and Kappa value indicate a strong agreement between the predicted and actual classifications.
 
 ## Future Work
 
