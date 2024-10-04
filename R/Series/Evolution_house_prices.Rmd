@@ -1,0 +1,139 @@
+---
+title: "Study about the evolution of the price of new houses in the Balearics"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include = FALSE}
+library(stats);library(TSA);library(lmtest);library(fpp);library(readxl);library(quantmod)
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+```
+```{r intro, include=FALSE}
+X25171 <- read_excel("25171.xls", sheet = "Hoja2")
+Nacional <- X25171[,1:2]
+Balears <- X25171[,3:4]
+Nacional_ts <- ts(Nacional[,1],start = c(2007,1),end = c(2021,2),frequency = 4)
+Nacional_ts[] <- rev(Nacional_ts)
+Balears_ts <- ts(Balears[,1],start = c(2007,1),end = c(2021,2),frequency = 4)
+Balears_ts[] <- rev(Balears_ts)
+```
+
+## Arnau Urbina. 
+
+Our series is about the quarterly price of new homes in the Balearic Islands in the period from 2007 to the second quarter of 2021.
+
+```{r comparacio,echo = FALSE,fig.width = 5,fig.height = 3,fig.align = "center"}
+ts.plot(Balears_ts,col = 'darkblue',lwd = 2,ylab = 'Price of new housing')
+lines(Nacional_ts,col = 'red',lwd = 2)
+legend(x = 2019,y = 110,c("National", "Balearic Islands"),
+       lty = 1,cex = 0.5,col = c("red", "darkblue"))
+```
+
+We can see how the price of new housing in the two series is the same. They suffer a fall in price from 2008 until 2013 when they start to recover and even at the end to exceed the prices that were there before. The price in the Balearic Islands compared to the Spanish average is much lower in 2008 and as the years go by the difference is less, after recovering from the crisis, the price begins to increase and in some quarters the price of the Balearic Islands is above the Spanish average, especially in recent years.
+
+Now let's focus more on the Balearic Islands: 
+
+```{r Baleares0,echo = FALSE,fig.width = 5, fig.height = 3,fig.align = "center"}
+ts.plot(Balears_ts,col = 'darkblue',lwd = 2,ylab = 'Price in the Balearics')
+trend4 <- ma(Balears_ts,order = 4,centre = T)
+lines(trend4,col = "gold",lwd = 2)
+abline(h = mean(Balears_ts),col = 'red')
+legend(x = 2006.5,y = 150, c("Series", "MA(4)" ,"Global Media"),
+       lty = 1,cex = 0.5,
+       col = c("darkblue", "gold" , "red"))
+```
+
+As we have said before, it is clear that there is a trend, from 2008 to 2013 there is a descending trend due to the crisis and from 2013 the price is recovering and has even surpassed the price it had before the crisis, so we are going to break down the series: 
+
+```{r Baleares,echo = FALSE,fig.width = 5, fig.height = 2.5}
+plot(decompose(Balears_ts))
+```
+
+Using the classical decomposition we can see that there is seasonality, where it can be seen that the high peaks are in the third quarter of each year and the lowest peak is in the first quarter.
+
+```{r variacion,echo = FALSE,fig.width = 6, fig.height = 3,fig.align = "center"}
+plot(Balears_ts,col = 'darkblue',lwd = 1,ylab = 'Price in the Balearics',main = 'Variations')
+arrows(x0 = 2008.5,x1 = 2013.25,y0 = 124.234,y = 88.520,length = 0.2,code = 2)
+text(2009.25,100,'Decrease of 20.88%.',cex = 0.8)
+arrows(x0 = 2013.25,x1 = 2020.75,y0 = 88.520,y = 150.176,length = 0.2,code = 2)
+text(2016,130,'Increase of 69.65%.',cex = 0.8)
+abline(h = 150.176,col = 'red',lty = 3)
+arrows(x0 = 2008.5,x1 = 2008.5,y0 = 124.234,y1 = 150.176,length = 0.2,code = 2)
+text(2011,140,'Increase of 20.88%.',cex = 0.8)
+points(2011.75,105.768,col = 'red')
+points(2020.5,145.381,col = 'red')
+```
+
+The largest quarter-on-quarter decline occurred between Q4 2011 and Q1 2012.
+
+The largest quarter-on-quarter increase occurred between Q2 and Q3 2020. 
+
+## Time series modelling
+
+To model the series we will only use data from 2014 to the present.
+
+```{r lm,echo = FALSE,fig.width = 5, fig.height = 3,fig.align = "center"}
+data_new <- Balears_ts[29:58]
+t = (1:length(data_new))
+
+mod.lm <- lm(data_new~t)
+beta <- mod.lm$coefficients
+plot(t,data_new)
+lines(t,beta[1] + beta[2]*t,col = 'orchid2',lwd = 2)
+nuevo <- data.frame(t = c(31,32,33))
+pred <- predict(mod.lm,nuevo)
+```
+
+The regression line reflects the trend of the series, the constant and coefficient accompanying time are significant.
+
+The coefficient of determination of the regression line is 96.5%, which means that time explains 96.5% of the variation in the series, a good fit. 
+
+This model predicts that in the first quarter of 2022 the price of new housing in the Balearic Islands will be around 152.01.  
+
+## Holt-Winters exponential smoothing model 
+
+The Holt-Wintres equation is: 
+    Lt = 0.5303783(Yt-S[t-p])+(1-0.5303783(L[t-1]+T[t-1]))
+    Tt = 0.03448927(Lt-L[t-1]+(1-0.03448927)T[t-1])
+    St = 0.9629868(Yt-Lt)+(1-0.9629868)S[t-p]
+    Yt estimated = L[t-1] + T[t-1] + S[t-p]
+
+With this model the prediction for new house prices in the Balearic Islands in the first quarter of 2022 is 156.7 with a confidence interval of 95%, [149.5466,163.8500]: 
+
+```{r winters,echo = FALSE,fig.width = 5, fig.height = 2.8,fig.align = "center"}
+source("HWplot3.R")
+demand <- ts(data_new, start = c(2014), frequency = 4)
+HWplot3 (demand, n.ahead = 3)
+```
+
+The series of new house prices in the Balearic Islands from 2014 to the present is not a stationary series because it has an increasing trend. To obtain a stationary series we differentiate the series twice and lag 1. Let's see what model this differentiation of the series proposes: 
+
+```{r ea3,echo = FALSE,out.height = 2}
+prueba <- ts(data_new,start=c(2014),end = c(2021,2),frequency = 4)
+serie <- diff(prueba,differences = 2,lag = 1)
+eacf(diff(prueba,differences = 2,lag = 1),ar.max = 2,ma.max = 6)
+```
+
+It proposes the following models: AR(1), MA(3) and MA(2). Now let's see which model is proposed by the auto.arima function: 
+
+```{r arima,echo = FALSE,out.height = 1,out.width = 5}
+prueba <- ts(data_new,start = c(2014),end = c(2021,2),frequency = 4)
+mod1 = auto.arima(prueba,include.mean = FALSE)
+coeftest(mod1)
+```
+
+The auto.arima function proposes an MA(1) model, with this model let's see what estimate and 95% confidence interval it gives us for the first quarter of 2022. 
+
+It gives us that the price for the first quarter of 2022 is 155.05 and its confidence interval is [147.97,162.13]. 
+
+Finally, let's look at the residuals of the model:
+
+```{r residuos,echo = FALSE,fig.width = 6, fig.height = 3}
+checkresiduals(mod1$residuals,)
+```
+
+It indicates that there is no serial correlation, the residuals are within the parameter and in the last graph we can observe that they do not follow a normal well and therefore a point estimate of their mean and variance cannot be given.
+
+
+
