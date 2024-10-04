@@ -50,3 +50,7 @@ The aim of this project is to carry out a temporal analysis of the quarterly evo
 ## Conclusions
 
 This analysis allows us to visualise how the real estate market in the Balearic Islands has followed a recovery trend after the 2008 crisis, with a performance that sometimes exceeds the national average. The predictive models offer estimates for the price in 2022, indicating an upward trend in the prices of new homes.
+
+## Contact us
+
+For any questions or interest in the project, you can contact me through my [LinkedIn](https://www.linkedin.com/in/arnau-urbina-lopez/) profile.
