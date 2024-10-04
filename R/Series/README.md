@@ -6,27 +6,27 @@ The aim of this project is to carry out a temporal analysis of the quarterly evo
 ## Description of the Analysis
 1. **Visualisation and Temporal Comparison:**
 
-  - Two time series are presented: one corresponding to prices in the Balearic Islands and the other to the national average, which allows the evolution of the local market to be visualised in comparison with the national market.
+    - Two time series are presented: one corresponding to prices in the Balearic Islands and the other to the national average, which allows the evolution of the local market to be visualised in comparison with the national market.
 
 2. **Moving Average and Global Average:**
 
-  - The four-quarter moving average and the global average of the series are calculated to analyse the trend and seasonality in the Balearic Islands.
+    - The four-quarter moving average and the global average of the series are calculated to analyse the trend and seasonality in the Balearic Islands.
 
 3. **Analysis of Price Variations:**
 
-  - The highest and lowest peaks and troughs of the series are identified, calculating the percentage variation between them, as well as the largest quarterly increases and decreases.
+    - The highest and lowest peaks and troughs of the series are identified, calculating the percentage variation between them, as well as the largest quarterly increases and decreases.
 
 4. **Series Modelling for Price Forecasting:**
 
-  - An adjusted series since 2014 is used to perform a simple linear regression model, which explains the general behaviour of house prices as a function of time.
+    - An adjusted series since 2014 is used to perform a simple linear regression model, which explains the general behaviour of house prices as a function of time.
 
-  - In addition, a Holt-Winters exponential smoothing model is implemented to capture both trend and seasonality.
+    - In addition, a Holt-Winters exponential smoothing model is implemented to capture both trend and seasonality.
 
-  - The stationarity of the series is assessed, applying differencing to stabilise the trend, and ARIMA models are fitted using R's auto.arima() function for forecasting.
+    - The stationarity of the series is assessed, applying differencing to stabilise the trend, and ARIMA models are fitted using R's auto.arima() function for forecasting.
 
 5. **Forecast for the First Quarter of 2022:**
 
-  - The results of the models (linear regression, Holt-Winters and ARIMA) provide a point estimate of house prices in the Balearic Islands for the first quarter of 2022, together with confidence intervals.
+    - The results of the models (linear regression, Holt-Winters and ARIMA) provide a point estimate of house prices in the Balearic Islands for the first quarter of 2022, together with confidence intervals.
 
 ## Models Used
 
