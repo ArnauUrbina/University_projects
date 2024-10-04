@@ -33,9 +33,9 @@ The aim of this project is to carry out a temporal analysis of the quarterly evo
   - **Linear Regression:** Explains the general trend in house prices over time.
 
   - **Holt-Winters:** Exponential smoothing model to capture trend and seasonality, generating a forecast with confidence intervals.
-  - 
+    
   - **ARIMA:** Integrated autoregressive moving average model, with automatic parameter selection to model the time series.
-  - 
+    
 ## Requirements
 
   - R 4.0 or higher
