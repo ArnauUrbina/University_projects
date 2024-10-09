@@ -32,11 +32,9 @@ This exercise involves the time series of daily wholesale electricity prices in 
 
 ## Technologies Used
 
-- **R:** For data analysis and modeling (`forecast`, `tseries`, `fGarch`, `TSA`).
-- **RMarkdown:** For reporting and code documentation.
-- **Libraries:**
-
-
+   - **R:** For data analysis and modeling (`forecast`, `tseries`, `fGarch`, `TSA`).
+   - **RMarkdown:** For reporting and code documentation.
+   - **Libraries:**
           - Time series analysis: `forecast`, `tseries`, `TSA`, `fGarch`
           - Data manipulation: `tidyverse`, `lubridate`
           - Visualization: `ggplot2`
