@@ -1,0 +1,250 @@
+---
+title: "Time Series Analysis"
+author: "Arnau Urbina Lopez"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+library(forecast);library(tseries);library(TSA)
+library(fGarch);library(lmtest);library(quantmod)
+library(tidyverse);library(knitr);library(xtable)
+library(kableExtra);library(readr);library(lubridate)
+```
+
+## Exercise 1
+
+## A) Let's look at the series and see if it is stationary:
+
+```{r 1a, echo = FALSE, warning = FALSE, fig.width = 10, fig.height = 2, fig.align = "center"}
+
+IBEX <- read.csv("^IBEX.csv")
+IBEX$Close <- as.numeric(IBEX$Close)
+
+Rt <- rep(0,4086)
+for (i in 2:4087){
+  Rt[i] <- log(IBEX$Close[i]/IBEX$Close[i-1])
+}
+IBEX$Rt <- Rt
+
+IBEX$Date <- as.Date(IBEX$Date)  
+data_ts <- xts(IBEX[,-1], IBEX$Date)
+
+dades <- data_ts[c("2019","2020","2021","2022")]
+
+xx <- as.numeric(dades$Rt)
+m <- mean(xx,na.rm = TRUE)
+
+Rt2 <- if_else(is.na(xx) == TRUE,m,xx)
+
+dades <- as.data.frame(dades)
+dades <- cbind(dades,Rt2)
+
+par(mar = c(1, par("mar")[2], 0.5, 0))
+plot.ts(dades$Rt2,ylab = 'Log-Rent')
+D <- adf.test(dades$Rt2, alternative = "stationary")
+```
+
+The series seems to be stationary, it has no trend, it seems to be centred at 0 and to have a constant variance with some fluctuation higher than normal, period with a high volatility. To be sure we do the Dickey-Fuller test, it gives us a p-value(`r D$p.value`) < 0.05, therefore, we can accept H1: It is stationary.
+
+## B) We propose models that can fit the series well: 
+
+```{r 1b, echo = FALSE, warning = FALSE, fig.width = 10, fig.height = 2, fig.align = "center"}
+
+renta <- dades$Rt2
+par(mfrow = c(1,2),mar = c(1, par("mar")[2], 1, par("mar")[4]))
+acf(renta)
+pacf(renta)
+```
+
+The ACF and PACF indicate an ARMA process. We could consider an ARMA(0,1), ARMA(0,2), ARMA(1,0) or ARMA(2,0).
+
+## C) Model proposed by auto.arima:
+
+```{r 1c, echo = FALSE, warning = FALSE}
+
+mod <- auto.arima(dades$Rt2)
+coe1 <- coeftest(mod)[1,1]
+coe2 <- coeftest(mod)[2,1]
+```
+
+It proposes an ARMA(0,2) model, where the coefficient of ma1 = `r coe1` and of ma2 = `r coe2`. This is appropriate, it is one of the models we propose in the previous section.
+
+## D) Analyse the squared residuals of the series: 
+
+```{r 1d, echo = FALSE, warning = FALSE}
+
+B <- Box.test(residuals(mod)^2, type = "Ljung-Box")
+```
+
+From the Ljung-Box test, we observe that the p-value(`r B$p.value`) < 0.05, therefore, we accept H1: the squared residuals are not independent. The results are not as expected.  
+
+## E) We fit a GARCH model: 
+
+```{r, echo = FALSE, warning = FALSE, fig.width = 10, fig.height = 2, fig.align = "center"}
+
+par(mfrow = c(1,2),mar = c(1, par("mar")[2], 1, par("mar")[4]))
+model <- residuals(mod)^2
+acf(model)
+pacf(model)
+```
+
+Looking at the acf and pacf plots, the same thing happens, we do not get an ARMA structure. 
+
+Both the Ljung-Box test and the plots indicate that these data contain an Arch effect. Therefore, it would be best to fit a model of this type. 
+
+```{r 1e, echo = FALSE, warning = FALSE, include = FALSE}
+
+mod_garch <- garchFit(formula = ~garch(1,1),data = dades$Rt2)
+```
+
+```{r gg, include = FALSE}
+
+mu <- sprintf("%.5f",1.738e-04 )
+omega <- sprintf("%.5f",7.012e-06)
+alpha <- sprintf("%.5f",1.587e-01 )
+beta <- sprintf("%.5f",8.077e-01)
+```
+
+The expression of the GARCH(1,1) model obtained is: 
+
+Y(t) = `r mu ` + E(t), E(t)~N(0,sigma^2(t)), where sigma^2(t) = `r omega` + `r alpha` * E[t-1] + `r beta` * sigma^2[t-1]
+
+$r_t = a_t$
+$a_t = \sigma_t + \epsilon_t$, where $\epsilon_t \sim N(0,1)$ iid
+$\sigma_t^2 = 0 + 0.15870 \cdot a_{t-1} + 0.80770 \cdot \sigma_{t-1}^2$
+
+## F) We tested several GARCH models: 
+
+The Garch(1,1) model seems the most reasonable model, although we can also calculate others for comparison: GARCH(2,1), GARCH(3,1), GARCH(1,4), GARCH(2,4) and compare them using the AIC:
+
+```{r f, echo = FALSE, warning = FALSE, include = FALSE}
+
+mod_garch2 <- garchFit(formula = ~garch(2,1),data = dades$Rt2)
+mod_garch3 <- garchFit(formula = ~garch(3,1),data = dades$Rt2)
+mod_garch4 <- garchFit(formula = ~garch(1,4),data = dades$Rt2)
+mod_garch5 <- garchFit(formula = ~garch(1,3),data = dades$Rt2)
+
+Models <- c("Garch(1,1)","Garch(2,1)","Garch(3,1)","Garch(1,4)","Garch(1,3)")
+AIC <- c("-6.080391","-6.083530","-6.080842", "-6.073881","-6.074730")
+df <- rbind(Models,AIC)
+```
+
+```{r tabla, echo = FALSE,fig.align = 'center'}
+kable(df)
+```
+
+Looking at the table, we see that they are all very similar. But, for the principle of parsimony, we will stick with the simplest model, the model we have seen initially, GARCH(1,1). 
+
+## G) Draw confidence intervals for the estimates: 
+
+```{r 1g, echo = FALSE, warning = FALSE, include = FALSE}
+
+mod <- garchFit(~garch(1,1),data = dades$Rt2,include.mean = F)
+mod2 <- garch(dades$Rt2,order = c(1,1))
+pred <- predict(mod2)
+```
+
+```{r d, echo = FALSE, warning = FALSE, fig.width = 10, fig.height = 3, fig.align = "center"}
+
+par(mar = c(1, par("mar")[2], 0.5, 0))
+ts.plot(dades$Rt2)
+lines(1:length(dades$Rt2),pred[,1],col = "red")
+lines(1:length(dades$Rt2),pred[,2],col = "red")
+```
+
+The goodness of fit is sometimes not entirely good. There are some fluctuations outside the confidence interval, the model is not very good at predicting these large fluctuations. 
+
+## H) Study the residues obtained in the previous section: 
+
+```{r 1h, echo = FALSE, warning = FALSE, fig.width = 10, fig.height = 2, fig.align = "center"}
+
+S <- shapiro.test(residuals(mod_garch)) 
+B1 <- Box.test(residuals(mod_garch),type = "Ljung")
+par(mfrow = c(1,2),mar = c(1, par("mar")[2], 1, par("mar")[4]))
+acf(residuals(mod_garch))
+pacf(residuals(mod_garch))
+```
+
+The Shapiro-Wilkins test (pvalue = `r S$p.value`) indicates normality in the residuals of the garch model and the Box-Pierce test (pvalue = `r B1$p.value`) indicates that the residuals are independent white noise. 
+
+The residuals are distributed as a normal distribution: N(0, 0.01451049)
+
+## Exercise 2 
+
+# A) The series contains 362 observations. 
+
+```{r 2a, echo = FALSE, warning = FALSE, include = FALSE}
+precio_luz <- read_csv("precio_luz.csv", 
+                       locale = locale(decimal_mark = ","))
+periode <- parse_date_time(precio_luz$Periodo, 'dmy')
+data <- data.frame(as.Date(periode), precio_luz$`Euros (€/MWh)`)
+
+luz <- xts(data[,-1], as.Date(periode))
+```
+
+```{r grafica, echo = FALSE, fig.width = 10, fig.height = 3, fig.align = "center"}
+par(mar = c(1, par("mar")[2], 0.5, 0))
+ts.plot(luz)
+```
+
+We can observe a clear positive trend in the graph, this already indicates that the series is not stationary. It also seems to have seasonality, in some moments the series goes up and in others it tends to go down, it seems to have a pattern. 
+
+## B) Let's see if a linear regression is appropriate: 
+
+```{r 2b, echo = FALSE, warning = FALSE}
+
+t= (1:length(precio_luz$`Euros (€/MWh)`))
+
+mod.lm <- lm(precio_luz$`Euros (€/MWh)`~t)
+mods <- summary(mod.lm)
+mods$coefficients 
+mods$r.squared
+```
+
+The model explains about 73% of the model variability. Where time is significant but the Intercept is not.
+
+```{r 2b2, echo = FALSE, warning = FALSE, fig.width = 10, fig.height = 4, fig.align = "center"}
+par(mar = c(1, par("mar")[2], 1, 0))
+checkresiduals(residuals(mod.lm))
+```
+
+It seems that a linear regression is not the best option, the residuals are not correct and there is still dependence. Everything indicates that the best option would be to fit an ARMA. 
+
+## C) Let's look for a model that better explains the series: 
+
+```{r 2c, echo = FALSE, warning = FALSE, fig.width = 10, fig.height = 2, fig.align = "center"}
+mod <- auto.arima(precio_luz$`Euros (€/MWh)`)
+precio <- precio_luz$`Euros (€/MWh)` 
+par(mfrow = c(1,2),mar = c(1, par("mar")[2], 1, par("mar")[4]))
+acf(precio)
+pacf(precio)
+B2 <- Box.test(residuals(mod)^2, type="Ljung-Box")
+```
+
+We are going to fit an ARMA(2,1,2) model, in which we are going to have to differentiate. From the Ljung-Box test we can say that the residuals are not white noise, therefore they are dependent (pvalue=`r B2$p.value` < 0.05). There is arch effect, we have to fit an ARMA + GARCH model. We will use a GARCH(1,1) model. 
+
+```{r 2c2, echo = FALSE, warning = FALSE, inlcude = FALSE, results = 'hide'}
+fit1 <- arima(luz, order = c(1,1,1))
+res <- residuals(fit1)
+fit2 <- garch(res, order = c(1,1))
+```
+
+## D) Let's compare the predictions of the series with the original series: 
+
+```{r df, echo = FALSE, warning = FALSE, fig.width = 10, fig.height = 3, fig.align = "center"}
+
+ht.arch <- fit2$fitted.values[,1]^2
+fit.values <- fitted.values(fit1)
+low <- fit.values -1.96*sqrt(ht.arch)
+up <- fit.values+1.96*sqrt(ht.arch)
+preds <- predict(fit2,luz)[,1]
+par(mar = c(1, par("mar")[2], 0.5, 0))
+plot.ts(luz,type = 'l')
+lines(low,col = 'blue',lty = 2)
+lines(up,col = 'blue',lty = 2)
+lines(preds,col = 'red')
+```
+
+Predictions fit the model fairly well and no observations fall outside the confidence interval. The goodness of fit is good. 
