@@ -176,7 +176,7 @@ The residuals are distributed as a normal distribution: N(0, 0.01451049)
 # A) The series contains 362 observations. 
 
 ```{r 2a, echo = FALSE, warning = FALSE, include = FALSE}
-precio_luz <- read_csv("precio_luz.csv", 
+precio_luz <- read_csv("light_price.csv", 
                        locale = locale(decimal_mark = ","))
 periode <- parse_date_time(precio_luz$Periodo, 'dmy')
 data <- data.frame(as.Date(periode), precio_luz$`Euros (€/MWh)`)
